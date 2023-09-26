@@ -84,14 +84,16 @@ func newNewKafkaInput(config map[interface{}]interface{}) topology.Input {
 		decoder:        codec.NewDecoder(codertype),
 	}
 
-	for {
-		m, err := kafkaInput.reader.ReadMessage(context.Background())
-		if err != nil {
-			glog.Fatalf("read message error: %v", err)
-			break
+	go func() {
+		for {
+			m, err := kafkaInput.reader.ReadMessage(context.Background())
+			if err != nil {
+				glog.Fatalf("read message error: %v", err)
+				break
+			}
+			kafkaInput.messages <- &m
 		}
-		kafkaInput.messages <- &m
-	}
+	}()
 
 	return kafkaInput
 }

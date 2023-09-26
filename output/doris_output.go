@@ -21,7 +21,6 @@ func (action *DorisAction) Encode() []byte {
 		err error
 	)
 	buf, err = f().Encode(action.event)
-	glog.Errorf("%s", string(buf))
 	if err != nil {
 		glog.Errorf("could marshal event(%v):%s", action.event, err)
 		return nil
@@ -102,8 +101,6 @@ func (e *CsvEncoder) Encode(v interface{}) ([]byte, error) {
 
 	}
 	str := strings.Join(array, e.delimiter)
-	tmp := strings.Split(str, e.delimiter)
-	glog.Infof("tmp len:%d", len(tmp))
 	return []byte(str), nil
 }
 

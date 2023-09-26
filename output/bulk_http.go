@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bitly/go-simplejson"
 	"github.com/golang/glog"
 )
 
@@ -49,6 +50,7 @@ type GetRetryEventsFunc func(*http.Response, []byte, *BulkRequest) ([]int, []int
 type HTTPBulkProcessor struct {
 	stop              bool
 	headers           map[string]string
+	url               string
 	requestMethod     string
 	retryResponseCode map[int]bool
 	bulk_size         int
@@ -70,13 +72,14 @@ type HTTPBulkProcessor struct {
 	getRetryEventsFunc GetRetryEventsFunc
 }
 
-func NewHTTPBulkProcessor(headers map[string]string, hosts []string, requestMethod string, retryResponseCode map[int]bool, bulk_size, bulk_actions, flush_interval, concurrent int, compress bool, newBulkRequestFunc NewBulkRequestFunc, getRetryEventsFunc GetRetryEventsFunc) *HTTPBulkProcessor {
+func NewHTTPBulkProcessor(headers map[string]string, hosts []string, requestMethod string, retryResponseCode map[int]bool, bulk_size, bulk_actions, flush_interval, concurrent int, compress bool, newBulkRequestFunc NewBulkRequestFunc, getRetryEventsFunc GetRetryEventsFunc, url string) *HTTPBulkProcessor {
 	hostsI := make([]interface{}, len(hosts))
 	for i, h := range hosts {
 		hostsI[i] = h
 	}
 	bulkProcessor := &HTTPBulkProcessor{
 		headers:            headers,
+		url:                url,
 		requestMethod:      requestMethod,
 		retryResponseCode:  retryResponseCode,
 		bulk_size:          bulk_size,
@@ -162,7 +165,7 @@ func (p *HTTPBulkProcessor) innerBulk(bulkRequest *BulkRequest) {
 
 		glog.Infof("try to bulk with host (%s)", REMOVE_HTTP_AUTH_REGEXP.ReplaceAllString(host, "${1}"))
 
-		url := strings.TrimRight(host, "/") + "/_bulk"
+		url := strings.TrimRight(host, "/") + p.url
 		success, shouldRetry, noRetry, newBulkRequest := p.tryOneBulk(url, bulkRequest)
 		if success {
 			_finishTime := float64(time.Now().UnixNano()/1000000) / 1000
@@ -248,6 +251,15 @@ func (p *HTTPBulkProcessor) tryOneBulk(url string, br *BulkRequest) (bool, []int
 		glog.Errorf(`read bulk response error: %s. will NOT retry`, err)
 		return true, shouldRetry, noRetry, nil
 	}
+
+	js, err := simplejson.NewJson([]byte(respBody))
+	status, e := js.Get("Status").String()
+	if e != nil && status == "Fail" {
+		glog.Errorf("error resp:%s", respBody)
+		shouldRetry, noRetry, newBulkRequest = p.getRetryEventsFunc(resp, respBody, br)
+		return true, shouldRetry, noRetry, newBulkRequest
+	}
+
 	glog.V(5).Infof("get response[%d]", len(respBody))
 	glog.V(20).Infof("%s", respBody)
 

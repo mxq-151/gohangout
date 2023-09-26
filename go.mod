@@ -8,6 +8,8 @@ require (
 	github.com/bkaradzic/go-lz4 v1.0.1-0.20160924222819-7224d8d8f27e // indirect
 	github.com/childe/healer v0.5.5
 	github.com/fsnotify/fsnotify v1.5.1
+	github.com/bitly/go-simplejson v0.5.1
+	github.com/segmentio/kafka-go v0.4.43
 	github.com/golang/glog v1.0.0
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect

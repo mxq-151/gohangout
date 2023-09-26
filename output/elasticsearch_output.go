@@ -384,7 +384,7 @@ func newElasticsearchOutput(config map[interface{}]interface{}) topology.Output 
 			}()
 		}
 	}
-	rst.bulkProcessor = NewHTTPBulkProcessor(headers, rst.assebleHosts(), requestMethod, retryResponseCode, bulk_size, bulk_actions, flush_interval, concurrent, compress, f, esGetRetryEvents)
+	rst.bulkProcessor = NewHTTPBulkProcessor(headers, rst.assebleHosts(), requestMethod, retryResponseCode, bulk_size, bulk_actions, flush_interval, concurrent, compress, f, esGetRetryEvents, "/_bulk")
 	return rst
 }
 

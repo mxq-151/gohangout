@@ -205,7 +205,7 @@ func newInfluxdbOutput(config map[interface{}]interface{}) topology.Output {
 		}
 	}
 
-	rst.bulkProcessor = NewHTTPBulkProcessor(headers, hosts, requestMethod, retryResponseCode, bulk_size, bulk_actions, flush_interval, concurrent, compress, f, influxdbGetRetryEvents)
+	rst.bulkProcessor = NewHTTPBulkProcessor(headers, hosts, requestMethod, retryResponseCode, bulk_size, bulk_actions, flush_interval, concurrent, compress, f, influxdbGetRetryEvents, "/_bulk")
 	return rst
 }
 

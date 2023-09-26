@@ -8,10 +8,13 @@ require (
 	github.com/bkaradzic/go-lz4 v1.0.1-0.20160924222819-7224d8d8f27e // indirect
 	github.com/childe/healer v0.5.5
 	github.com/fsnotify/fsnotify v1.5.1
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
+	github.com/segmentio/kafka-go v0.4.43
+	github.com/bitly/go-simplejson v0.5.1
 	github.com/ipipdotnet/datx-go v0.0.0-20181123035258-af996d4701a0
 	github.com/ipipdotnet/ipdb-go v1.3.1
 	github.com/json-iterator/go v1.1.12

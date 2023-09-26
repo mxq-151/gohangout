@@ -8,6 +8,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/segmentio/kafka-go"
 	"log"
+	"strings"
 )
 
 type NewKafkaInput struct {
@@ -60,8 +61,16 @@ func newNewKafkaInput(config map[interface{}]interface{}) topology.Input {
 		messagesLength = v.(int)
 	}
 
+	brokers := make([]string, 0)
+	broker := consumerSettings["bootstrap.servers"].(string)
+
+	tmp := strings.Split(broker, ",")
+	for _, s := range tmp {
+		brokers = append(brokers, s)
+	}
+
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  consumerSettings["bootstrap.servers"].([]string),
+		Brokers:  brokers,
 		GroupID:  consumerSettings["group.id"].(string),
 		Topic:    topic,
 		MaxBytes: 10e6, // 10MB

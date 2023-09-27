@@ -9,6 +9,7 @@ import (
 	"github.com/segmentio/kafka-go"
 	"log"
 	"strings"
+	"time"
 )
 
 type NewKafkaInput struct {
@@ -28,6 +29,7 @@ func newNewKafkaInput(config map[interface{}]interface{}) topology.Input {
 		codertype      string = "plain"
 		decorateEvents        = false
 		topic          string
+		commitInterval int = 2000
 	)
 
 	consumerSettings := make(map[string]interface{})
@@ -61,6 +63,10 @@ func newNewKafkaInput(config map[interface{}]interface{}) topology.Input {
 		messagesLength = v.(int)
 	}
 
+	if consumerSettings["bootstrap.servers"] == nil {
+		glog.Fatal("must config bootstrap.servers in consumer setting")
+	}
+
 	brokers := make([]string, 0)
 	broker := consumerSettings["bootstrap.servers"].(string)
 
@@ -68,12 +74,25 @@ func newNewKafkaInput(config map[interface{}]interface{}) topology.Input {
 	for _, s := range tmp {
 		brokers = append(brokers, s)
 	}
+	if consumerSettings["group.id"] == nil {
+		glog.Fatal("must config group.id in consumer setting")
+	}
+
+	if consumerSettings["auto.commit.interval.ms"] != nil {
+		commitInterval = consumerSettings["auto.commit.interval.ms"].(int)
+	}
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  brokers,
-		GroupID:  consumerSettings["group.id"].(string),
-		Topic:    topic,
-		MaxBytes: 10e6, // 10MB
+		Brokers:           brokers,
+		GroupID:           consumerSettings["group.id"].(string),
+		Topic:             topic,
+		MaxBytes:          10e6, // 10MB
+		MinBytes:          10e5,
+		QueueCapacity:     1000,
+		CommitInterval:    time.Duration(commitInterval),
+		ReadBatchTimeout:  60000,
+		HeartbeatInterval: 1000,
+		MaxWait:           60000,
 	})
 
 	kafkaInput := &NewKafkaInput{

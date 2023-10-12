@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/childe/gohangout/codec"
 	"github.com/childe/gohangout/topology"
@@ -118,7 +119,17 @@ func (e *CsvEncoder) loopMap(event map[string]interface{}, ar []string, field []
 		if ok {
 			return e.loopMap(cmap, ar, field, index+1)
 		} else {
-			ar = append(ar, value.(string))
+			if value != nil {
+				v, o := value.(json.Number)
+				if o {
+					ar = append(ar, v.String())
+				} else {
+					ar = append(ar, value.(string))
+				}
+			} else {
+				ar = append(ar, "-")
+			}
+
 			return ar
 		}
 	} else {

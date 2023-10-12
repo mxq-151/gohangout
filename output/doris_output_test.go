@@ -17,15 +17,20 @@ func TestDorisSend(t *testing.T) {
 	config["worker"] = 1
 	config["user"] = "doris"
 	config["columns"] = "test,hh,kk"
+	config["nested_field"] = "log.file.path"
 	config["passwd"] = "doris123"
 	var output = newDorisOutput(config)
 
 	for i := 0; i < 4; i++ {
 		msg := fmt.Sprintf("this is a test:%d", i)
 		var event = map[string]interface{}{"test": msg}
+
+		var mape = map[string]interface{}{"path": "/opt/soft/"}
+		var fmap = map[string]interface{}{"file": mape}
 		event["kk"] = nil
 		event["hh"] = "mxq"
 		event["uu"] = "sss"
+		event["log"] = fmap
 		output.Emit(event)
 	}
 

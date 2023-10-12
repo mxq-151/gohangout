@@ -84,8 +84,9 @@ func init() {
 }
 
 type CsvEncoder struct {
-	delimiter string
-	fields    []string
+	delimiter    string
+	fields       []string
+	nestedFields [][]string
 }
 
 func (e *CsvEncoder) Encode(v interface{}) ([]byte, error) {
@@ -98,10 +99,33 @@ func (e *CsvEncoder) Encode(v interface{}) ([]byte, error) {
 		} else {
 			array = append(array, "-")
 		}
-
 	}
+
+	for _, f := range e.nestedFields {
+		array = e.loopMap(event, array, f, 0)
+	}
+
 	str := strings.Join(array, e.delimiter)
 	return []byte(str), nil
+}
+
+func (e *CsvEncoder) loopMap(event map[string]interface{}, ar []string, field []string, index int) []string {
+
+	key := field[index]
+	value := event[key]
+	if value != nil {
+		cmap, ok := value.(map[string]interface{})
+		if ok {
+			return e.loopMap(cmap, ar, field, index+1)
+		} else {
+			ar = append(ar, value.(string))
+			return ar
+		}
+	} else {
+		ar = append(ar, "-")
+		return ar
+	}
+
 }
 
 func newDorisOutput(config map[interface{}]interface{}) topology.Output {
@@ -118,9 +142,25 @@ func newDorisOutput(config map[interface{}]interface{}) topology.Output {
 		glog.Fatal("must config columns")
 	}
 
+	nestedFields := make([][]string, 0)
+	columStr := config["columns"].(string)
+	if v, ok := config["nested_field"]; ok {
+		var str = v.(string)
+		tmp := strings.Split(str, ",")
+		for _, s := range tmp {
+			array := strings.Split(s, ".")
+			nestedFields = append(nestedFields, array)
+			f := strings.Join(array, "_")
+			columStr = columStr + "," + f
+		}
+
+	} else {
+		glog.Fatal("must config columns")
+	}
+
 	var del = "\x01"
 
-	f = func() codec.Encoder { return &CsvEncoder{delimiter: del, fields: columns} }
+	f = func() codec.Encoder { return &CsvEncoder{delimiter: del, fields: columns, nestedFields: nestedFields} }
 
 	var (
 		bulk_size, bulk_actions, flush_interval, concurrent int
@@ -197,7 +237,7 @@ func newDorisOutput(config map[interface{}]interface{}) topology.Output {
 	headers["strict_mode"] = "false"
 	headers["max_filter_ratio"] = "0.01"
 	headers["Expect"] = "100-continue"
-	headers["columns"] = config["columns"].(string)
+	headers["columns"] = columStr
 	headers["column_separator"] = "\\x01"
 	headers["compress_type"] = "gz"
 	headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(up))
